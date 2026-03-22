@@ -43,10 +43,8 @@ class CheckAuthStatusTool implements IMcpTool {
         }
 
         // Search for MedicationRequests for this patient
-        const searchParams = [`patient=Patient/${patientId}`, "status=active,on-hold,stopped"];
-        if (medicationName) {
-          searchParams.push(`code:text=${medicationName}`);
-        }
+        // Note: code:text modifier not supported by all FHIR servers, so we filter client-side
+        const searchParams = [`patient=Patient/${patientId}`];
 
         let medRequests: fhirR4.Bundle | null;
         try {
