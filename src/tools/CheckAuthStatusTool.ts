@@ -33,6 +33,7 @@ class CheckAuthStatusTool implements IMcpTool {
         },
       },
       async ({ patientId, medicationName }) => {
+       try {
         // Resolve patient ID from SHARP context if not provided
         if (!patientId) {
           patientId = NullUtilities.getOrThrow(
@@ -64,10 +65,11 @@ class CheckAuthStatusTool implements IMcpTool {
 
         if (!medRequests?.entry?.length) {
           return McpUtilities.createTextResponse(
-            `No MedicationRequests found for patient ${patientId}` +
+            `## Prior Authorization Status for Patient ${patientId}\n\n` +
+            `No active medication orders found` +
             (medicationName ? ` matching "${medicationName}"` : "") +
-            ". The patient may not have any active medication orders.",
-            { isError: true },
+            ". This patient may not have any pending or denied prior authorizations.\n\n" +
+            "*Tip: Try asking about the patient's conditions or clinical history instead.*",
           );
         }
 
@@ -143,6 +145,12 @@ class CheckAuthStatusTool implements IMcpTool {
         }
 
         return McpUtilities.createTextResponse(results.join("\n"));
+       } catch (error) {
+         return McpUtilities.createTextResponse(
+           `Error checking authorization status: ${error instanceof Error ? error.message : "Unknown error"}`,
+           { isError: true },
+         );
+       }
       },
     );
   }
