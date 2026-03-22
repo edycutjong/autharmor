@@ -8,6 +8,7 @@
     "dev": "npx tsx --watch src/index.ts",
     "test": "jest",
     "test:coverage": "jest --coverage",
+    "lint": "eslint src/",
     "demo": "npx tsx scripts/golden-path.ts",
     "demo:ngrok": "npx tsx scripts/golden-path.ts https://inadvertent-unmiasmal-diego.ngrok-free.dev"
   },
@@ -22,13 +23,16 @@
   },
   "homepage": "https://github.com/edycutjong/autharmor#readme",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.2",
     "@types/jest": "^30.0.0",
+    "eslint": "^10.1.0",
     "jest": "^30.3.0",
     "ts-jest": "^29.4.6",
     "tsx": "^4.19.4",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.57.1"
   },
   "dependencies": {
     "@google/genai": "^1.0.0",

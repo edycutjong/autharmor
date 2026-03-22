@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { Request } from "express";
 
 // Mock axios before importing fhir-client
