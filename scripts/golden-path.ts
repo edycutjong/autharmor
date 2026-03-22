@@ -2,9 +2,13 @@
 /**
  * Golden Path Demo Script for AuthArmor
  *
- * Starts a mock FHIR server from synthetic data, then calls the AuthArmor
- * MCP server through all 3 tools end-to-end. Use this before recording
- * the demo video to ensure zero failures.
+ * Starts a mock FHIR server from ALL synthetic data bundles, then calls the
+ * AuthArmor MCP server through all 3 tools for each scenario end-to-end.
+ *
+ * Scenarios:
+ *   1. Sarah Chen    — Rheumatoid Arthritis → Humira denied (step therapy)
+ *   2. James Martinez — Type 2 Diabetes     → Ozempic denied (formulary preference)
+ *   3. Emily Johnson  — Multiple Sclerosis  → Ocrevus denied (injectable DMT required)
  *
  * Usage:
  *   npm run demo             # Run against localhost:3050
@@ -24,6 +28,39 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTHARMOR_URL = process.argv[2] || "http://localhost:3050";
 const MOCK_FHIR_PORT = 9876;
 
+// ─── Scenarios ───────────────────────────────────────────────────────────────
+type Scenario = {
+  name: string;
+  bundle: string;
+  patientId: string;
+  medicationName: string;
+  denialReason: string;
+};
+
+const SCENARIOS: Scenario[] = [
+  {
+    name: "🦴 Rheumatoid Arthritis — Humira",
+    bundle: "patient-ra-bundle.json",
+    patientId: "patient-sarah-chen",
+    medicationName: "Humira",
+    denialReason: "Step therapy requirement not met",
+  },
+  {
+    name: "💉 Type 2 Diabetes — Ozempic",
+    bundle: "patient-t2d-bundle.json",
+    patientId: "patient-james-martinez",
+    medicationName: "Ozempic",
+    denialReason: "Preferred alternative not tried",
+  },
+  {
+    name: "🧠 Multiple Sclerosis — Ocrevus",
+    bundle: "patient-ms-bundle.json",
+    patientId: "patient-emily-johnson",
+    medicationName: "Ocrevus",
+    denialReason: "Injectable DMT step therapy required",
+  },
+];
+
 // ─── Colors ──────────────────────────────────────────────────────────────────
 const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
 const red = (s: string) => `\x1b[31m${s}\x1b[0m`;
@@ -31,12 +68,27 @@ const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
 const yellow = (s: string) => `\x1b[33m${s}\x1b[0m`;
 const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
 const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
+const magenta = (s: string) => `\x1b[35m${s}\x1b[0m`;
 
 // ─── Mock FHIR Server ───────────────────────────────────────────────────────
+function loadAllResources(): Array<{ resourceType: string; id: string }> {
+  const dataDir = path.join(__dirname, "..", "data");
+  const resources: Array<{ resourceType: string; id: string }> = [];
+
+  for (const file of fs.readdirSync(dataDir)) {
+    if (!file.endsWith("-bundle.json")) continue;
+    const bundle = JSON.parse(fs.readFileSync(path.join(dataDir, file), "utf-8"));
+    for (const entry of bundle.entry) {
+      resources.push(entry.resource);
+    }
+  }
+
+  return resources;
+}
+
 function startMockFhirServer(): Promise<http.Server> {
-  const bundlePath = path.join(__dirname, "..", "data", "patient-ra-bundle.json");
-  const bundle = JSON.parse(fs.readFileSync(bundlePath, "utf-8"));
-  const resources = bundle.entry.map((e: { resource: unknown }) => e.resource);
+  const resources = loadAllResources();
+  console.log(dim(`  Loaded ${resources.length} FHIR resources from ${SCENARIOS.length} bundles`));
 
   const server = http.createServer((req, res) => {
     const url = req.url || "";
@@ -46,8 +98,7 @@ function startMockFhirServer(): Promise<http.Server> {
     const patientMatch = url.match(/^\/Patient\/(.+?)(\?|$)/);
     if (patientMatch) {
       const patient = resources.find(
-        (r: { resourceType: string; id: string }) =>
-          r.resourceType === "Patient" && r.id === patientMatch[1],
+        (r) => r.resourceType === "Patient" && r.id === patientMatch[1],
       );
       if (patient) {
         res.writeHead(200);
@@ -63,14 +114,27 @@ function startMockFhirServer(): Promise<http.Server> {
     const searchMatch = url.match(/^\/(\w+)\?(.+)$/);
     if (searchMatch) {
       const resourceType = searchMatch[1];
-      const matching = resources.filter(
-        (r: { resourceType: string }) => r.resourceType === resourceType,
-      );
+      const params = new URLSearchParams(searchMatch[2]);
+      const patientParam = params.get("patient");
+
+      // Filter by resource type AND patient if specified
+      const matching = resources.filter((r) => {
+        if (r.resourceType !== resourceType) return false;
+        if (patientParam) {
+          const rAny = r as Record<string, unknown>;
+          const subject = rAny.subject as { reference?: string } | undefined;
+          const patient = rAny.patient as { reference?: string } | undefined;
+          const ref = subject?.reference || patient?.reference;
+          if (ref && ref !== patientParam) return false;
+        }
+        return true;
+      });
+
       const responseBundle = {
         resourceType: "Bundle",
         type: "searchset",
         total: matching.length,
-        entry: matching.map((r: unknown) => ({ resource: r })),
+        entry: matching.map((r) => ({ resource: r })),
       };
       res.writeHead(200);
       res.end(JSON.stringify(responseBundle));
@@ -93,27 +157,23 @@ function startMockFhirServer(): Promise<http.Server> {
 let mcpRequestId = 0;
 
 function parseSseResponse(text: string): unknown {
-  // Extract JSON from SSE event stream
   const lines = text.split("\n");
   for (const line of lines) {
     if (line.startsWith("data: ")) {
-      try {
-        return JSON.parse(line.substring(6));
-      } catch { /* skip */ }
+      try { return JSON.parse(line.substring(6)); } catch { /* skip */ }
     }
   }
-  // Try direct JSON parse
   try { return JSON.parse(text); } catch { return null; }
 }
 
-async function mcpInitialize(): Promise<void> {
+async function mcpInitialize(patientId: string): Promise<void> {
   const response = await fetch(`${AUTHARMOR_URL}/mcp`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Accept": "application/json, text/event-stream",
       "x-fhir-server-url": `http://localhost:${MOCK_FHIR_PORT}`,
-      "x-patient-id": "patient-sarah-chen",
+      "x-patient-id": patientId,
     },
     body: JSON.stringify({
       jsonrpc: "2.0",
@@ -129,13 +189,14 @@ async function mcpInitialize(): Promise<void> {
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`Initialize failed: ${response.status} ${response.statusText} ${body}`);
+    throw new Error(`Initialize failed: ${response.status} ${body}`);
   }
 }
 
 async function mcpCallTool(
   toolName: string,
   args: Record<string, unknown>,
+  patientId: string,
 ): Promise<string> {
   const response = await fetch(`${AUTHARMOR_URL}/mcp`, {
     method: "POST",
@@ -143,7 +204,7 @@ async function mcpCallTool(
       "Content-Type": "application/json",
       "Accept": "application/json, text/event-stream",
       "x-fhir-server-url": `http://localhost:${MOCK_FHIR_PORT}`,
-      "x-patient-id": "patient-sarah-chen",
+      "x-patient-id": patientId,
     },
     body: JSON.stringify({
       jsonrpc: "2.0",
@@ -160,40 +221,31 @@ async function mcpCallTool(
 
   const text = await response.text();
   const json = parseSseResponse(text) as Record<string, unknown> | null;
+  if (!json) return text;
 
-  if (!json) {
-    return text;
-  }
-
-  // Extract content from MCP response
   const result = json.result as { content?: Array<{ text?: string }> } | undefined;
   if (result?.content) {
-    return result.content
-      .map((c: { text?: string }) => c.text || "")
-      .join("\n");
+    return result.content.map((c) => c.text || "").join("\n");
   }
 
   return JSON.stringify(json, null, 2);
 }
 
-// ─── Demo Steps ──────────────────────────────────────────────────────────────
+// ─── Step Runner ─────────────────────────────────────────────────────────────
+let globalStep = 0;
 
-async function step(
-  num: number,
-  title: string,
-  fn: () => Promise<string>,
-): Promise<string> {
-  const stepLabel = cyan(`[Step ${num}]`);
+async function step(title: string, fn: () => Promise<string>): Promise<string> {
+  globalStep++;
+  const stepLabel = cyan(`[Step ${globalStep}]`);
   console.log(`\n${stepLabel} ${bold(title)}`);
 
   const start = Date.now();
   try {
     const result = await fn();
     const elapsed = Date.now() - start;
-    console.log(green(`  ✅ Success`) + dim(` (${elapsed}ms)`));
+    console.log(green(`  ✅ Pass`) + dim(` (${elapsed}ms)`));
 
-    // Print first 500 chars of result
-    const preview = result.length > 500 ? result.substring(0, 500) + "..." : result;
+    const preview = result.length > 300 ? result.substring(0, 300) + "..." : result;
     for (const line of preview.split("\n")) {
       console.log(dim(`  │ ${line}`));
     }
@@ -201,92 +253,92 @@ async function step(
     return result;
   } catch (error) {
     const elapsed = Date.now() - start;
-    console.log(red(`  ❌ FAILED`) + dim(` (${elapsed}ms)`));
+    console.log(red(`  ❌ FAIL`) + dim(` (${elapsed}ms)`));
     console.error(red(`  ${error instanceof Error ? error.message : String(error)}`));
     throw error;
+  }
+}
+
+// ─── Run Scenario ────────────────────────────────────────────────────────────
+async function runScenario(scenario: Scenario): Promise<boolean> {
+  console.log(`\n${magenta(`═══ ${scenario.name} ═══`)}`);
+
+  try {
+    await step("MCP Initialize", () => {
+      return mcpInitialize(scenario.patientId).then(() => "OK");
+    });
+
+    await step(`CheckAuthStatus — ${scenario.medicationName}`, () =>
+      mcpCallTool("CheckAuthStatus", {
+        patientId: scenario.patientId,
+        medicationName: scenario.medicationName,
+      }, scenario.patientId),
+    );
+
+    const appealText = await step(
+      `GenerateAppeal — ${scenario.denialReason}`,
+      () => mcpCallTool("GenerateAppeal", {
+        patientId: scenario.patientId,
+        medicationName: scenario.medicationName,
+        denialReason: scenario.denialReason,
+      }, scenario.patientId),
+    );
+
+    await step("GetAppealPdf — Format document", () =>
+      mcpCallTool("GetAppealPdf", {
+        patientId: scenario.patientId,
+        appealText: appealText.substring(0, 2000),
+      }, scenario.patientId),
+    );
+
+    return true;
+  } catch {
+    return false;
   }
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 async function main() {
   console.log(bold("\n🛡️  AuthArmor — Golden Path Demo\n"));
-  console.log(`  Target: ${cyan(AUTHARMOR_URL)}`);
+  console.log(`  Target:    ${cyan(AUTHARMOR_URL)}`);
+  console.log(`  Scenarios: ${SCENARIOS.length}`);
 
-  // 1. Start mock FHIR server
+  // Health check first
   const fhirServer = await startMockFhirServer();
 
-  let passed = 0;
-  let failed = 0;
+  let scenariosPassed = 0;
+  let scenariosFailed = 0;
 
   try {
-    // 2. Health check
-    await step(1, "Health Check", async () => {
+    // Global health check
+    await step("Health Check", async () => {
       const res = await fetch(`${AUTHARMOR_URL}/health`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (data.status !== "ok") throw new Error("Health check returned non-ok status");
-      if (!data.tools || data.tools.length < 3)
-        throw new Error(`Expected 3+ tools, got ${data.tools?.length}`);
-      return JSON.stringify(data, null, 2);
+      if (data.status !== "ok") throw new Error("non-ok");
+      return `${data.tools.length} tools registered`;
     });
-    passed++;
 
-    // 3. MCP Initialize
-    await step(2, "MCP Initialize", async () => {
-      await mcpInitialize();
-      return "Session initialized successfully";
-    });
-    passed++;
-
-    // 4. CheckAuthStatus
-    await step(3, "CheckAuthStatus — Find Humira denial", async () => {
-      return await mcpCallTool("CheckAuthStatus", {
-        patientId: "patient-sarah-chen",
-        medicationName: "Humira",
-      });
-    });
-    passed++;
-
-    // 5. GenerateAppeal
-    const appealText = await step(
-      4,
-      "GenerateAppeal — Draft citation-driven appeal",
-      async () => {
-        return await mcpCallTool("GenerateAppeal", {
-          patientId: "patient-sarah-chen",
-          medicationName: "Humira",
-          denialReason: "Step therapy requirement not met",
-        });
-      },
-    );
-    passed++;
-
-    // 6. GetAppealPdf
-    await step(5, "GetAppealPdf — Format appeal document", async () => {
-      return await mcpCallTool("GetAppealPdf", {
-        patientId: "patient-sarah-chen",
-        appealText: appealText.substring(0, 2000), // Trim for safety
-      });
-    });
-    passed++;
+    // Run each scenario
+    for (const scenario of SCENARIOS) {
+      const ok = await runScenario(scenario);
+      if (ok) scenariosPassed++;
+      else scenariosFailed++;
+    }
 
     // Summary
-    console.log(
-      `\n${bold("━━━ Results ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")}`,
-    );
-    console.log(green(`  ✅ ${passed} passed`) + (failed ? red(` ❌ ${failed} failed`) : ""));
-    console.log(bold(`\n🎬 Golden path verified — safe to record demo!\n`));
+    console.log(`\n${bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")}`);
+    console.log(`  ${bold("Scenarios")}: ${green(`${scenariosPassed} passed`)}${scenariosFailed ? " " + red(`${scenariosFailed} failed`) : ""}`);
+    console.log(`  ${bold("Steps")}:     ${green(`${globalStep} total`)}`);
+
+    if (scenariosFailed === 0) {
+      console.log(bold(`\n🎬 All ${scenariosPassed} scenarios verified — safe to record demo!\n`));
+    } else {
+      console.log(yellow(`\n⚠️  ${scenariosFailed} scenario(s) failed — fix before recording!\n`));
+      process.exitCode = 1;
+    }
   } catch {
-    failed++;
-    console.log(
-      `\n${bold("━━━ Results ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")}`,
-    );
-    console.log(
-      green(`  ✅ ${passed} passed`) + " " + red(`❌ ${failed} failed`),
-    );
-    console.log(
-      yellow(`\n⚠️  Fix failures before recording!\n`),
-    );
+    console.log(red(`\n❌ Fatal error during golden path\n`));
     process.exitCode = 1;
   } finally {
     fhirServer.close();
