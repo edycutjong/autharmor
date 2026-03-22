@@ -64,6 +64,7 @@ describe("GeminiClient", () => {
 
       const { getGeminiClient } = require("../../lib/gemini-client");
       const client = getGeminiClient();
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
       await expect(
         client.generateAppeal({
           patientSummary: "Test",
@@ -72,6 +73,7 @@ describe("GeminiClient", () => {
           fhirResources: "Test",
         }),
       ).rejects.toThrow("Gemini returned empty response");
+      consoleSpy.mockRestore();
     });
   });
 
