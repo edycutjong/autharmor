@@ -1,6 +1,6 @@
 {
   "name": "autharmor-mcp-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Citation-driven prior authorization appeals MCP server for healthcare AI agents",
   "main": "src/index.ts",
   "scripts": {

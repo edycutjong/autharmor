@@ -5,6 +5,10 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { IMcpTool } from "./types/IMcpTool";
 import cors from "cors";
 import express from "express";
+import { readFileSync } from "fs";
+import { join } from "path";
+
+const pkg = JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf-8")) as { version: string };
 
 const app = express();
 const port = process.env["PORT"] || 3050;
@@ -17,7 +21,7 @@ app.get("/health", async (_req, res) => {
   res.json({
     status: "ok",
     name: "AuthArmor MCP Server",
-    version: "1.0.0",
+    version: pkg.version,
     tools: Object.keys(tools).filter((k) => k !== "__esModule"),
   });
 });
@@ -28,7 +32,7 @@ app.post("/mcp", async (req, res) => {
     const server = new McpServer(
       {
         name: "AuthArmor",
-        version: "1.0.0",
+        version: pkg.version,
       },
       {
         capabilities: {
