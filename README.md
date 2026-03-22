@@ -72,17 +72,17 @@ Try these prompts in Prompt Opinion (select a patient first, e.g. Morgan564 Lars
 
 **Step 1: Check authorization status**
 ```
-Call the CheckAuthStatus tool with medicationName set to adalimumab
+I want you to call the AuthArmor CheckAuthStatus tool. Do NOT use GetPatientData. Use CheckAuthStatus with medicationName adalimumab.
 ```
 
 **Step 2: Generate appeal letter**
 ```
-Call the GenerateAppeal tool with medicationName set to adalimumab and denialReason set to Step therapy requirement not met
+I want you to call the AuthArmor GenerateAppeal tool. Use GenerateAppeal with medicationName adalimumab and denialReason Step therapy requirement not met.
 ```
 
 **Step 3: Format as document**
 ```
-Call the GetAppealPdf tool with appealText set to This letter serves as a formal appeal for the prior authorization denial of adalimumab. The denial reason was Step therapy requirement not met. We request reconsideration based on clinical evidence.
+I want you to call the AuthArmor GetAppealPdf tool. Use GetAppealPdf with appealText set to: This letter serves as a formal appeal for the prior authorization denial of adalimumab for patient Morgan564 Larson43. The denial reason was Step therapy requirement not met. We request reconsideration based on clinical evidence.
 ```
 
 ## ☁️ Deployment
