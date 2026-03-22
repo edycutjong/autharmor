@@ -25,7 +25,7 @@ class GeminiClient {
       );
     }
     this.ai = new GoogleGenAI({ apiKey });
-    this.model = process.env["GEMINI_MODEL"] || "gemini-2.0-flash";
+    this.model = process.env["GEMINI_MODEL"] || "gemini-2.5-flash";
   }
 
   async generateAppeal(context: {
