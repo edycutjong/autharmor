@@ -75,7 +75,7 @@ app.post("/mcp", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
+app.listen(Number(port), "0.0.0.0", () => {
   console.log(`🛡️  AuthArmor MCP server listening on port ${port}`);
   console.log(`   Health: http://localhost:${port}/health`);
   console.log(`   MCP:    http://localhost:${port}/mcp`);
