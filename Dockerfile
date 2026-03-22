@@ -5,5 +5,5 @@ RUN npm ci --production
 COPY tsconfig.json ./
 COPY src/ ./src/
 COPY data/ ./data/
-EXPOSE 5000
+EXPOSE 3050
 CMD ["npx", "tsx", "src/index.ts"]

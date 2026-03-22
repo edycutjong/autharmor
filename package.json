@@ -7,7 +7,9 @@
     "start": "npx tsx src/index.ts",
     "dev": "npx tsx --watch src/index.ts",
     "test": "jest",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "demo": "npx tsx scripts/golden-path.ts",
+    "demo:ngrok": "npx tsx scripts/golden-path.ts https://inadvertent-unmiasmal-diego.ngrok-free.dev"
   },
   "repository": {
     "type": "git",
