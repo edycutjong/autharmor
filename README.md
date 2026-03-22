@@ -82,7 +82,7 @@ I want you to call the AuthArmor GenerateAppeal tool. Use GenerateAppeal with me
 
 **Step 3: Format as document**
 ```
-I want you to call the AuthArmor GetAppealPdf tool. Use GetAppealPdf with appealText set to: This letter serves as a formal appeal for the prior authorization denial of adalimumab for patient Morgan564 Larson43. The denial reason was Step therapy requirement not met. We request reconsideration based on clinical evidence.
+I want you to call the AuthArmor GetAppealPdf tool. Use GetAppealPdf with appealText set to: This letter serves as a formal appeal for the prior authorization denial of adalimumab. The denial reason was Step therapy requirement not met. We request reconsideration based on clinical evidence.
 ```
 
 ## ☁️ Deployment
