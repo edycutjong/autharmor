@@ -22,7 +22,7 @@ export const FhirUtilities = {
     if (fhirToken) {
       const claims = jose.decodeJwt(fhirToken);
       if (claims["patient"]) {
-        return claims["patient"]?.toString();
+        return claims["patient"].toString();
       }
     }
 

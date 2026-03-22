@@ -62,6 +62,26 @@ describe("FhirUtilities", () => {
       );
     });
 
+    it("converts numeric patient claim to string via toString", () => {
+      const payload = Buffer.from(
+        JSON.stringify({ patient: 12345 }),
+      ).toString("base64url");
+      const jwt = `eyJhbGciOiJIUzI1NiJ9.${payload}.fakesig`;
+
+      const req = mockReq({ "x-fhir-access-token": jwt });
+      expect(FhirUtilities.getPatientIdIfContextExists(req)).toBe("12345");
+    });
+
+    it("returns null when JWT patient claim is null", () => {
+      const payload = Buffer.from(
+        JSON.stringify({ patient: null }),
+      ).toString("base64url");
+      const jwt = `eyJhbGciOiJIUzI1NiJ9.${payload}.fakesig`;
+
+      const req = mockReq({ "x-fhir-access-token": jwt });
+      expect(FhirUtilities.getPatientIdIfContextExists(req)).toBeNull();
+    });
+
     it("falls back to x-patient-id when JWT has no patient claim", () => {
       const payload = Buffer.from(
         JSON.stringify({ sub: "user-1" }),

@@ -305,4 +305,21 @@ describe("CheckAuthStatusTool", () => {
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("Error checking authorization status");
   });
+
+  it("catches non-Error thrown in top-level try/catch", async () => {
+    // We need to throw a non-Error that bypasses the inner try/catch blocks.
+    // The outer catch has: error instanceof Error ? error.message : "Unknown error"
+    // We do this by making the MedicationRequest search succeed,
+    // then having the entries iteration throw a non-Error.
+    mockedFhirClient.search.mockResolvedValueOnce({
+      resourceType: "Bundle",
+      // Force iteration to throw by returning a non-iterable entry value
+      get entry() { throw "string error"; },
+    } as any);
+
+    const handler = getToolHandler();
+    const result = await handler({});
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("Unknown error");
+  });
 });

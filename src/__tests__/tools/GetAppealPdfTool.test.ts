@@ -136,4 +136,39 @@ describe("GetAppealPdfTool", () => {
     const result = await handler({ appealText: "Appeal" });
     expect(result.content[0].text).toContain("Unknown");
   });
+
+  it("handles patient with only given name (no family)", async () => {
+    mockedFhirClient.read.mockResolvedValue({
+      id: "p1",
+      name: [{ given: ["OnlyGiven"] }],
+      birthDate: "1990-01-01",
+    } as any);
+
+    const handler = getToolHandler();
+    const result = await handler({ appealText: "Appeal" });
+    expect(result.content[0].text).toContain("OnlyGiven");
+  });
+
+  it("handles patient with no name property at all", async () => {
+    mockedFhirClient.read.mockResolvedValue({
+      id: "p1",
+      birthDate: "1990-01-01",
+    } as any);
+
+    const handler = getToolHandler();
+    const result = await handler({ appealText: "Appeal" });
+    expect(result.content[0].text).toContain("Unknown Patient");
+  });
+
+  it("handles patient with no id field", async () => {
+    mockedFhirClient.read.mockResolvedValue({
+      name: [{ given: ["A"], family: "B" }],
+      birthDate: "1990-01-01",
+    } as any);
+
+    const handler = getToolHandler();
+    const result = await handler({ appealText: "Appeal" });
+    // Should fall back to using the param patientId
+    expect(result.content[0].text).toContain("Patient/p1");
+  });
 });

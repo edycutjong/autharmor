@@ -314,4 +314,99 @@ describe("GenerateAppealTool", () => {
     const resourceLines = mockGenerate.mock.calls[0][0].fhirResources.split("\n");
     expect(resourceLines.length).toBe(11);
   });
+
+  it("handles patient with null name (no name array)", async () => {
+    mockedFhirClient.read.mockResolvedValue({ id: "p1" } as any);
+    mockedFhirClient.search.mockResolvedValue(null);
+    mockedGetGemini.mockReturnValue({ generateAppeal: jest.fn().mockResolvedValue("OK") } as any);
+    const handler = getToolHandler();
+    const result = await handler({ medicationName: "X" });
+    expect(result.content[0].text).toBe("OK");
+  });
+
+  it("handles patient read returning null (not throwing)", async () => {
+    mockedFhirClient.read.mockResolvedValue(null);
+    mockedFhirClient.search
+      .mockResolvedValueOnce(null).mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+    mockedGetGemini.mockReturnValue({ generateAppeal: jest.fn().mockResolvedValue("OK") } as any);
+    const handler = getToolHandler();
+    const result = await handler({ medicationName: "X" });
+    // With no patient and no FHIR resources, it should return error
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("No FHIR resources found");
+  });
+
+  it("handles patient with given as undefined (only family name)", async () => {
+    mockedFhirClient.read.mockResolvedValue({ id: "p1", name: [{ family: "Solo" }], birthDate: "2000-01-01" } as any);
+    mockedFhirClient.search.mockResolvedValue(null);
+    const mockGenerate = jest.fn().mockResolvedValue("OK");
+    mockedGetGemini.mockReturnValue({ generateAppeal: mockGenerate } as any);
+    const handler = getToolHandler();
+    await handler({ medicationName: "X" });
+    expect(mockGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ patientSummary: expect.stringContaining("Solo") }),
+    );
+  });
+
+  it("handles condition with no clinicalStatus", async () => {
+    mockedFhirClient.read.mockResolvedValue({ id: "p1", name: [{ given: ["A"] }] } as any);
+    mockedFhirClient.search
+      .mockResolvedValueOnce({ entry: [{ resource: { id: "c1", code: { coding: [{ display: "Test" }] } } }] } as any)
+      .mockResolvedValueOnce(null).mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+    mockedGetGemini.mockReturnValue({ generateAppeal: jest.fn().mockResolvedValue("OK") } as any);
+    const handler = getToolHandler();
+    const result = await handler({ medicationName: "X" });
+    expect(result.content[0].text).toBe("OK");
+  });
+
+  it("handles medication with text-only concept and no status", async () => {
+    mockedFhirClient.read.mockResolvedValue({ id: "p1", name: [{ given: ["A"] }] } as any);
+    mockedFhirClient.search
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ entry: [{ resource: { id: "m1", medicationCodeableConcept: { text: "Aspirin" } } }] } as any)
+      .mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+    mockedGetGemini.mockReturnValue({ generateAppeal: jest.fn().mockResolvedValue("OK") } as any);
+    const handler = getToolHandler();
+    const result = await handler({ medicationName: "X" });
+    expect(result.content[0].text).toBe("OK");
+  });
+
+  it("does not override denialReason when already provided", async () => {
+    mockedFhirClient.read.mockResolvedValue({ id: "p1", name: [{ given: ["A"] }] } as any);
+    mockedFhirClient.search
+      .mockResolvedValueOnce(null).mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ entry: [{ resource: { id: "cl1", outcome: "error", disposition: "Auto reason" } }] } as any)
+      .mockResolvedValueOnce(null);
+    const mockGenerate = jest.fn().mockResolvedValue("OK");
+    mockedGetGemini.mockReturnValue({ generateAppeal: mockGenerate } as any);
+    const handler = getToolHandler();
+    await handler({ medicationName: "X", denialReason: "Explicit reason" });
+    expect(mockGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ denialReason: "Explicit reason" }),
+    );
+  });
+
+  it("handles observation with no code coding or text", async () => {
+    mockedFhirClient.read.mockResolvedValue({ id: "p1", name: [{ given: ["A"] }] } as any);
+    mockedFhirClient.search
+      .mockResolvedValueOnce(null).mockResolvedValueOnce(null).mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ entry: [{ resource: { id: "o1" } }] } as any);
+    mockedGetGemini.mockReturnValue({ generateAppeal: jest.fn().mockResolvedValue("OK") } as any);
+    const handler = getToolHandler();
+    const result = await handler({ medicationName: "X" });
+    expect(result.content[0].text).toBe("OK");
+  });
+
+  it("handles claim with no outcome", async () => {
+    mockedFhirClient.read.mockResolvedValue({ id: "p1", name: [{ given: ["A"] }] } as any);
+    mockedFhirClient.search
+      .mockResolvedValueOnce(null).mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ entry: [{ resource: { id: "cl1" } }] } as any)
+      .mockResolvedValueOnce(null);
+    mockedGetGemini.mockReturnValue({ generateAppeal: jest.fn().mockResolvedValue("OK") } as any);
+    const handler = getToolHandler();
+    const result = await handler({ medicationName: "X" });
+    expect(result.content[0].text).toBe("OK");
+  });
 });

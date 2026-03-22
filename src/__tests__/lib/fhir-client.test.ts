@@ -106,6 +106,17 @@ describe("FhirClient", () => {
       await expect(FhirClientInstance.read(req, "Patient/1")).rejects.toThrow("Network failure");
       consoleSpy.mockRestore();
     });
+
+    it("throws on axios error with no response property", async () => {
+      const axiosError = new Error("Connection refused");
+      mockAxiosCall.mockRejectedValue(axiosError);
+      mockIsAxiosError.mockReturnValue(true);
+
+      const req = mockReq({ "x-fhir-server-url": "https://fhir.example.com" });
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+      await expect(FhirClientInstance.read(req, "Patient/1")).rejects.toThrow("Connection refused");
+      consoleSpy.mockRestore();
+    });
   });
 
   describe("search", () => {
