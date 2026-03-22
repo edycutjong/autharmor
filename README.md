@@ -28,6 +28,7 @@ AuthArmor MCP Server
 ### Prerequisites
 - Node.js 22+
 - [Gemini API key](https://aistudio.google.com/apikey) (free tier)
+- [ngrok](https://ngrok.com/) account (free)
 
 ### Setup
 ```bash
@@ -42,14 +43,23 @@ cp .env.example .env
 npm run start
 ```
 
-The server runs on `http://localhost:5000/mcp`.
+The server runs on `http://localhost:3050/mcp`.
 
 ### Connect to Prompt Opinion
-1. Install ngrok: `brew install ngrok`
-2. Expose your server: `ngrok http 5000`
-3. In Prompt Opinion → Workspace Hub → Add MCP Server
-4. Paste `{ngrok_url}/mcp` → check "Streamable HTTP" → check "FHIR context"
-5. Click Test → verify tools appear → Save
+```bash
+# 1. Install ngrok
+brew install ngrok
+
+# 2. Add your authtoken (one-time setup — get it from https://dashboard.ngrok.com/get-started/your-authtoken)
+ngrok config add-authtoken YOUR_TOKEN_HERE
+
+# 3. Expose your server
+ngrok http 3050
+```
+
+4. In Prompt Opinion → Workspace Hub → Add MCP Server
+5. Paste `{ngrok_url}/mcp` → check "Streamable HTTP" → check "FHIR context"
+6. Click Test → verify 3 tools appear → Save
 
 ## 🔬 SHARP-on-MCP Context
 
