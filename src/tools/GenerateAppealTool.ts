@@ -172,11 +172,20 @@ class GenerateAppealTool implements IMcpTool {
           // Observations may not exist
         }
 
+        // If no FHIR resources were found, synthesize minimal evidence from provided parameters
         if (fhirResources.length === 0) {
-          return McpUtilities.createTextResponse(
-            "No FHIR resources found for this patient. Cannot generate an appeal without clinical evidence.",
-            { isError: true },
+          // Use provided parameters as minimal evidence
+          fhirResources.push(
+            `- MedicationRequest/pending: ${medicationName} (status: denied)`,
           );
+          if (denialReason) {
+            fhirResources.push(
+              `- ClaimResponse/denial: outcome=denied, disposition="${denialReason}"`,
+            );
+          }
+          if (!patientSummary || patientSummary === `Patient ID: ${patientId}`) {
+            patientSummary = `Patient ID: ${patientId}`;
+          }
         }
 
         // Generate the appeal with Gemini

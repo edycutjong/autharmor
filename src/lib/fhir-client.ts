@@ -41,13 +41,21 @@ class FhirClient {
       };
     }
 
+    console.log(`[FHIR] ${config.method?.toUpperCase()} ${config.url}`);
+
     try {
       const response = await axios(config);
+      console.log(`[FHIR] ✅ ${response.status} — ${typeof response.data === 'object' ? JSON.stringify(response.data).substring(0, 200) : response.data}`);
       return response.data as T;
     } catch (error) {
-      console.error(error);
-      if (isAxiosError(error) && error.response?.status === 404) {
-        return null;
+      if (isAxiosError(error)) {
+        console.error(`[FHIR] ❌ ${error.response?.status} ${error.response?.statusText} — URL: ${config.url}`);
+        console.error(`[FHIR] ❌ Response body:`, JSON.stringify(error.response?.data)?.substring(0, 500));
+        if (error.response?.status === 404) {
+          return null;
+        }
+      } else {
+        console.error(`[FHIR] ❌ Non-HTTP error:`, error);
       }
 
       throw error;

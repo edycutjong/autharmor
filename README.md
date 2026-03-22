@@ -68,25 +68,21 @@ ngrok http 3050
 
 ## 💬 Example Prompts
 
-Try these prompts with the AuthArmor agent in Prompt Opinion:
+Try these prompts in Prompt Opinion (select a patient first, e.g. Morgan564 Larson43):
 
+**Step 1: Check authorization status**
 ```
-Check the authorization status for this patient's medications
-```
-
-```
-Generate an appeal letter for the denied prior authorization
+Call the CheckAuthStatus tool with patientId set to Morgan564-Larson43 and medicationName set to adalimumab
 ```
 
+**Step 2: Generate appeal letter**
 ```
-Get the appeal letter as a PDF
+Call the GenerateAppeal tool with patientId set to Morgan564-Larson43 and medicationName set to adalimumab and denialReason set to Step therapy requirement not met
 ```
 
-**Full workflow prompt:**
+**Step 3: Format as document**
 ```
-Check if this patient has any denied prior authorizations.
-If there is a denial, generate an appeal letter with clinical citations.
-Then give me the appeal as a downloadable PDF.
+Call the GetAppealPdf tool with patientId set to Morgan564-Larson43 and appealText set to This letter serves as a formal appeal for the prior authorization denial of adalimumab. The denial reason was Step therapy requirement not met. We request reconsideration based on clinical evidence.
 ```
 
 ## ☁️ Deployment
