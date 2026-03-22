@@ -117,6 +117,46 @@ describe("FhirClient", () => {
       await expect(FhirClientInstance.read(req, "Patient/1")).rejects.toThrow("Connection refused");
       consoleSpy.mockRestore();
     });
+
+    it("logs non-object response data directly", async () => {
+      mockAxiosCall.mockResolvedValue({ data: "plain-text-response", status: 200 });
+      const req = mockReq({ "x-fhir-server-url": "https://fhir.example.com" });
+      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+      const result = await FhirClientInstance.read(req, "Patient/1");
+      expect(result).toBe("plain-text-response");
+      // Verify the non-object branch of the ternary was hit
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("plain-text-response"));
+      consoleSpy.mockRestore();
+    });
+
+    it("handles config with undefined method in logging", async () => {
+      mockAxiosCall.mockResolvedValue({ data: { id: "1" }, status: 200 });
+      const req = mockReq({ "x-fhir-server-url": "https://fhir.example.com" });
+      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+      const result = await FhirClientInstance.read(req, "Patient/1");
+      expect(result).toEqual({ id: "1" });
+      consoleSpy.mockRestore();
+    });
+
+    it("logs full axios error details with statusText and data", async () => {
+      const axiosError = new Error("Bad Request");
+      (axiosError as any).response = {
+        status: 400,
+        statusText: "Bad Request",
+        data: { issue: [{ diagnostics: "Invalid resource" }] },
+      };
+      mockAxiosCall.mockRejectedValue(axiosError);
+      mockIsAxiosError.mockReturnValue(true);
+
+      const req = mockReq({ "x-fhir-server-url": "https://fhir.example.com" });
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+      await expect(FhirClientInstance.read(req, "Patient/1")).rejects.toThrow("Bad Request");
+      // Verify both error log lines were called with full details
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("400 Bad Request"),
+      );
+      consoleSpy.mockRestore();
+    });
   });
 
   describe("search", () => {

@@ -41,7 +41,7 @@ class FhirClient {
       };
     }
 
-    console.log(`[FHIR] ${config.method?.toUpperCase()} ${config.url}`);
+    console.log(`[FHIR] ${config.method!.toUpperCase()} ${config.url}`);
 
     try {
       const response = await axios(config);

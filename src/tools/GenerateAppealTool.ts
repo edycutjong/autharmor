@@ -183,9 +183,7 @@ class GenerateAppealTool implements IMcpTool {
               `- ClaimResponse/denial: outcome=denied, disposition="${denialReason}"`,
             );
           }
-          if (!patientSummary || patientSummary === `Patient ID: ${patientId}`) {
-            patientSummary = `Patient ID: ${patientId}`;
-          }
+          patientSummary = `Patient ID: ${patientId}`;
         }
 
         // Generate the appeal with Gemini
