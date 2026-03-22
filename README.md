@@ -61,6 +61,38 @@ ngrok http 3050
 5. Paste `{ngrok_url}/mcp` → check "Streamable HTTP" → check "FHIR context"
 6. Click Test → verify 3 tools appear → Save
 
+## 💬 Example Prompts
+
+Try these prompts with the AuthArmor agent in Prompt Opinion:
+
+```
+Check the authorization status for this patient's medications
+```
+
+```
+Generate an appeal letter for the denied prior authorization
+```
+
+```
+Get the appeal letter as a PDF
+```
+
+**Full workflow prompt:**
+```
+Check if this patient has any denied prior authorizations.
+If there is a denial, generate an appeal letter with clinical citations.
+Then give me the appeal as a downloadable PDF.
+```
+
+## ☁️ Deployment
+
+AuthArmor is deployed on Fly.io:
+
+| Endpoint | URL |
+|---|---|
+| Health | `https://autharmor-mcp.fly.dev/health` |
+| MCP | `https://autharmor-mcp.fly.dev/mcp` |
+
 ## 🔬 SHARP-on-MCP Context
 
 AuthArmor receives FHIR context via [SHARP](https://www.sharponmcp.com/) HTTP headers:
@@ -78,3 +110,4 @@ Built for [Agents Assemble — The Healthcare AI Endgame](https://agents-assembl
 ## 📄 License
 
 MIT
+
