@@ -1,5 +1,10 @@
 # 🛡️ AuthArmor
 
+[![CI](https://github.com/edycutjong/autharmor/actions/workflows/ci.yml/badge.svg)](https://github.com/edycutjong/autharmor/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/edycutjong/autharmor)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-22%2B-green)](https://nodejs.org)
+
 **Citation-driven prior authorization appeals MCP server for healthcare AI agents.**
 
 AuthArmor is a [SHARP-on-MCP](https://www.sharponmcp.com/) server that helps clinicians and care coordinators fight denied prior authorizations. It reads patient FHIR records, searches payer policies, and generates appeal letters backed by citations to specific clinical data — no hallucinations, no guesswork.
