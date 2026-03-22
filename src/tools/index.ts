@@ -1,1 +1,3 @@
-// Placeholder — tools will be added in Phase 3
+export { CheckAuthStatusToolInstance } from "./CheckAuthStatusTool";
+export { GenerateAppealToolInstance } from "./GenerateAppealTool";
+export { GetAppealPdfToolInstance } from "./GetAppealPdfTool";
