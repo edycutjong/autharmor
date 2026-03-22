@@ -70,14 +70,22 @@ describe("GenerateAppealTool", () => {
     expect(result.content[0].text).toContain("Dear Medical Director");
   });
 
-  it("returns error when no FHIR resources found", async () => {
+  it("synthesizes minimal evidence when no FHIR resources found", async () => {
     mockedFhirClient.read.mockRejectedValue(new Error("Not found"));
     mockedFhirClient.search.mockResolvedValue(null);
 
+    const mockGenerate = jest.fn().mockResolvedValue("Appeal with minimal evidence");
+    mockedGetGemini.mockReturnValue({ generateAppeal: mockGenerate } as any);
+
     const handler = getToolHandler();
-    const result = await handler({ medicationName: "Humira" });
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain("No FHIR resources found");
+    const result = await handler({ medicationName: "Humira", denialReason: "Step therapy not met" });
+    expect(result.isError).toBeFalsy();
+    expect(result.content[0].text).toBe("Appeal with minimal evidence");
+    // Verify synthesized resources were passed to Gemini
+    const passedResources = mockGenerate.mock.calls[0][0].fhirResources;
+    expect(passedResources).toContain("MedicationRequest/pending: Humira");
+    expect(passedResources).toContain("ClaimResponse/denial");
+    expect(passedResources).toContain("Step therapy not met");
   });
 
   it("handles patient read failure gracefully", async () => {
@@ -329,12 +337,15 @@ describe("GenerateAppealTool", () => {
     mockedFhirClient.search
       .mockResolvedValueOnce(null).mockResolvedValueOnce(null)
       .mockResolvedValueOnce(null).mockResolvedValueOnce(null);
-    mockedGetGemini.mockReturnValue({ generateAppeal: jest.fn().mockResolvedValue("OK") } as any);
+    const mockGenerate = jest.fn().mockResolvedValue("OK");
+    mockedGetGemini.mockReturnValue({ generateAppeal: mockGenerate } as any);
     const handler = getToolHandler();
     const result = await handler({ medicationName: "X" });
-    // With no patient and no FHIR resources, it should return error
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain("No FHIR resources found");
+    // With no patient and no FHIR resources, it should synthesize minimal evidence
+    expect(result.isError).toBeFalsy();
+    expect(result.content[0].text).toBe("OK");
+    const passedResources = mockGenerate.mock.calls[0][0].fhirResources;
+    expect(passedResources).toContain("MedicationRequest/pending: X");
   });
 
   it("handles patient with given as undefined (only family name)", async () => {
