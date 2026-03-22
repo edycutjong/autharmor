@@ -44,7 +44,7 @@ class CheckAuthStatusTool implements IMcpTool {
 
         // Search for MedicationRequests for this patient
         // Note: code:text modifier not supported by all FHIR servers, so we filter client-side
-        const searchParams = [`patient=Patient/${patientId}`];
+        const searchParams = [`patient=${patientId}`];
 
         let medRequests: fhirR4.Bundle | null;
         try {
@@ -77,7 +77,7 @@ class CheckAuthStatusTool implements IMcpTool {
           claimResponses = await FhirClientInstance.search(
             req,
             "ClaimResponse",
-            [`patient=Patient/${patientId}`],
+            [`patient=${patientId}`],
           );
         } catch {
           // ClaimResponse may not exist — that's okay

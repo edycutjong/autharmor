@@ -75,7 +75,7 @@ class GenerateAppealTool implements IMcpTool {
         // 2. Get conditions (diagnoses)
         try {
           const conditions = await FhirClientInstance.search(req, "Condition", [
-            `patient=Patient/${patientId}`,
+            `patient=${patientId}`,
           ]);
           if (conditions?.entry?.length) {
             for (const entry of conditions.entry) {
@@ -100,7 +100,7 @@ class GenerateAppealTool implements IMcpTool {
           const meds = await FhirClientInstance.search(
             req,
             "MedicationRequest",
-            [`patient=Patient/${patientId}`],
+            [`patient=${patientId}`],
           );
           if (meds?.entry?.length) {
             for (const entry of meds.entry) {
@@ -125,7 +125,7 @@ class GenerateAppealTool implements IMcpTool {
           const claims = await FhirClientInstance.search(
             req,
             "ClaimResponse",
-            [`patient=Patient/${patientId}`],
+            [`patient=${patientId}`],
           );
           if (claims?.entry?.length) {
             for (const entry of claims.entry) {
@@ -148,7 +148,7 @@ class GenerateAppealTool implements IMcpTool {
         // 5. Get observations (lab results, vitals)
         try {
           const obs = await FhirClientInstance.search(req, "Observation", [
-            `patient=Patient/${patientId}`,
+            `patient=${patientId}`,
             "category=laboratory",
           ]);
           if (obs?.entry?.length) {
