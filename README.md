@@ -72,7 +72,7 @@ Try these prompts in Prompt Opinion (select a patient first, e.g. Morgan564 Lars
 
 **Step 1: Check authorization status**
 ```
-Check the prior auth status for adalimumab using AuthArmor
+Check the prior auth status for adalimumab
 ```
 
 **Step 2: Generate appeal letter**
