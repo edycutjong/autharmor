@@ -5,6 +5,7 @@
 
   [![Live Server](https://img.shields.io/badge/Live-autharmor--mcp.fly.dev-brightgreen.svg)](https://autharmor-mcp.fly.dev/health)
   [![Demo Video](https://img.shields.io/badge/Demo-YouTube-red.svg)](https://youtube.com/)
+  <br/>
   [![CI](https://github.com/edycutjong/autharmor/actions/workflows/ci.yml/badge.svg)](https://github.com/edycutjong/autharmor/actions/workflows/ci.yml)
   [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/edycutjong/autharmor)
   [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
