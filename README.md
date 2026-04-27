@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/og-image.png" alt="AuthArmor OG Graph" width="120">
+  <img src="docs/og-image.png" alt="AuthArmor OG Graph" width="800">
   <h1>🛡️ AuthArmor</h1>
   <p><em>AI agents that fight denied prior authorizations — so clinicians don't have to.</em></p>
 
