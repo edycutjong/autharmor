@@ -10,7 +10,10 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint src/",
     "demo": "npx tsx scripts/golden-path.ts",
-    "demo:ngrok": "npx tsx scripts/golden-path.ts https://inadvertent-unmiasmal-diego.ngrok-free.dev"
+    "demo:ngrok": "npx tsx scripts/golden-path.ts https://inadvertent-unmiasmal-diego.ngrok-free.dev",
+    "demo:video": "npx tsx scripts/demo-video-test.ts",
+    "demo:video:live": "npx tsx scripts/demo-video-test.ts --live",
+    "demo:video:all": "npx tsx scripts/demo-video-test.ts --all"
   },
   "repository": {
     "type": "git",

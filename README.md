@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="docs/og-image.png" alt="AuthArmor OG Graph" width="800">
-  <h1>🛡️ AuthArmor</h1>
+  <img src="docs/icon.svg" alt="AuthArmor Logo" width="800">
+  <h1><img src="docs/icon.svg" alt="AuthArmor" width="32" height="32" style="vertical-align: middle; margin-right: 8px;">AuthArmor</h1>
   <p><em>AI agents that fight denied prior authorizations — so clinicians don't have to.</em></p>
 
   [![Live Server](https://img.shields.io/badge/Live-autharmor--mcp.fly.dev-brightgreen.svg)](https://autharmor-mcp.fly.dev/health)
@@ -132,13 +132,24 @@ ngrok http 3050
 
 ### Test Prompts
 
-Select a patient (e.g., Morgan564 Larson43), then try:
+Select a patient (e.g., Edward499 Balistreri607), then try:
 
+**1. Check Prior Auth Status**
 ```
-1. "Check the prior auth status for adalimumab"
-2. "Generate an appeal letter for adalimumab — it was denied for step therapy requirement not met"
-3. "Format this as an appeal document"
+I want you to call the AuthArmor CheckAuthStatus tool. Use CheckAuthStatus with medicationName Vyvanse.
 ```
+
+**2. Generate Appeal Letter**
+```
+I want you to call the AuthArmor GenerateAppeal tool. Use GenerateAppeal with medicationName lisdexamfetamine and denialReason Non-preferred brand medication — plan requires trial of preferred amphetamine mixed salts before Vyvanse.
+```
+
+**3. Format as Document**
+```
+I want you to call the AuthArmor GetAppealPdf tool. Use GetAppealPdf with appealText set to: This letter serves as a formal appeal for the prior authorization denial of lisdexamfetamine (Vyvanse) for patient Edward499 Balistreri607. The denial reason was preferred alternative not tried. The patient previously failed methylphenidate due to motor tics and weight loss, and guanfacine due to inadequate symptom control. We request reconsideration based on clinical evidence.
+```
+
+> 📖 **Full testing guide** with expected outputs, curl examples, and troubleshooting: [`docs/TESTING.md`](docs/TESTING.md)
 
 ---
 
